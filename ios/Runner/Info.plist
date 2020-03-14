@@ -11,7 +11,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>firebaseauth</string>
+	<string>fireflutter</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -41,5 +41,36 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+			    <string>com.googleusercontent.apps.339640322048-ei37ujlhfpam02crv6algdt2aju2noug</string>
+				<string>fb517649412233290</string>
+				<string>twitterkit-E78pLyZpDIt8MIVhfGtSWYu6s</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Facebook Sign-in Section  -->
+    <key>FacebookAppID</key>
+    <string>517649412233290</string>
+    <key>FacebookDisplayName</key>
+    <string>flutter-firebase-auth</string>
+
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>fbapi</string>
+        <string>fb-messenger-share-api</string>
+        <string>fbauth2</string>
+        <string>fbshareextension</string>
+        <string>twitter</string>
+        <string>twitterauth</string>
+    </array>
+
 </dict>
 </plist>

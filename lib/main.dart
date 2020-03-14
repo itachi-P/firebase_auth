@@ -7,8 +7,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 enum EnumAuth {
   google,
-  twitter,
   facebook,
+  twitter,
 }
 
 void main() => runApp(MyApp());
@@ -17,24 +17,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'auth sample',
+      title: 'SNS auth',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       home: AuthPage(
-        title: 'Auth Sample with Firebase',
+        title: 'Auth with Firebase',
       ),
     );
   }
 }
 
 class AuthPage extends StatefulWidget {
-  AuthPage({
-    Key key,
-    this.title,
-  }) : super(
-          key: key,
-        );
+  AuthPage({Key key, this.title}) : super(key: key);
 
   final String title;
 
@@ -44,15 +39,17 @@ class AuthPage extends StatefulWidget {
 
 class _AuthPageState extends State<AuthPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn googleSignIn = GoogleSignIn();
-  final TwitterLogin twitterLogin = TwitterLogin(
-    consumerKey: "consumerKey",
-    consumerSecret: "consumerSecret",
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FacebookLogin _facebookSignIn = FacebookLogin();
+  final TwitterLogin _twitterLogin = TwitterLogin(
+    // このままではセキュリティ上大問題なのでcrypto使用版に書き換える
+    consumerKey: "xxxxxxxxxx",
+    consumerSecret: "xxxxxxxxxx",
   );
-  final FacebookLogin facebookSignIn = FacebookLogin();
 
   bool loggedIn = false;
   EnumAuth enumAuth;
+  FirebaseUser loggedInUser;
 
   void login() {
     setState(() {
@@ -73,18 +70,22 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future signInWithGoogle() async {
-    final GoogleSignInAccount googleSignInAccount = await googleSignIn.signIn();
-    final GoogleSignInAuthentication googleSignInAuthentication =
-        await googleSignInAccount.authentication;
+    // Google認証の許可画面が表示される
+    final GoogleSignInAccount googleUser = await _googleSignIn.signIn();
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
 
+    //Firebaseのユーザー情報にアクセス
     final AuthCredential credential = GoogleAuthProvider.getCredential(
-      accessToken: googleSignInAuthentication.accessToken,
-      idToken: googleSignInAuthentication.idToken,
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
     );
 
     //userのid取得
     final FirebaseUser user =
         (await _auth.signInWithCredential(credential)).user;
+    print("signed in " + user.displayName);
+    print('user profile picture: ${user.photoUrl}');
 
     assert(!user.isAnonymous);
     assert(await user.getIdToken() != null);
@@ -93,30 +94,9 @@ class _AuthPageState extends State<AuthPage> {
     assert(user.uid == currentUser.uid);
     login();
     setEnumAuth(EnumAuth.google);
-  }
-
-  Future signInWithTwitter() async {
-    // twitter認証の許可画面が出現
-    final TwitterLoginResult result = await twitterLogin.authorize();
-
-    //Firebaseのユーザー情報にアクセス & 情報の登録 & 取得
-    final AuthCredential credential = TwitterAuthProvider.getCredential(
-      authToken: result.session.token,
-      authTokenSecret: result.session.secret,
-    );
-
-    //Firebaseのuser id取得
-    final FirebaseUser user =
-        (await _auth.signInWithCredential(credential)).user;
-
-    assert(!user.isAnonymous);
-    assert(await user.getIdToken() != null);
-
-    final FirebaseUser currentUser = await _auth.currentUser();
-    assert(user.uid == currentUser.uid);
-
-    login();
-    setEnumAuth(EnumAuth.twitter);
+    setState(() {
+      loggedInUser = user;
+    });
   }
 
   Future signInWithFacebook() async {
@@ -142,18 +122,39 @@ class _AuthPageState extends State<AuthPage> {
     setEnumAuth(EnumAuth.facebook);
   }
 
+  Future signInWithTwitter() async {
+    final TwitterLoginResult result = await _twitterLogin.authorize();
+
+    final AuthCredential credential = TwitterAuthProvider.getCredential(
+      authToken: result.session.token,
+      authTokenSecret: result.session.secret,
+    );
+
+    final FirebaseUser user =
+        (await _auth.signInWithCredential(credential)).user;
+
+    assert(!user.isAnonymous);
+    assert(await user.getIdToken() != null);
+
+    final FirebaseUser currentUser = await _auth.currentUser();
+    assert(user.uid == currentUser.uid);
+
+    login();
+    setEnumAuth(EnumAuth.twitter);
+  }
+
   void signOutGoogle() async {
-    await googleSignIn.signOut();
+    await _googleSignIn.signOut();
     print("User Sign Out Google");
   }
 
-  void signOutTwitter() async {
-    await twitterLogin.logOut();
-    print("User Sign Out Twittter");
+  void signOutFacebook() async {
+    await _facebookSignIn.logOut();
+    print("User Sign Out Facebook");
   }
 
-  void signOutFacebook() async {
-    await facebookSignIn.logOut();
+  void signOutTwitter() async {
+    await _twitterLogin.logOut();
     print("User Sign Out Twittter");
   }
 
@@ -169,27 +170,19 @@ class _AuthPageState extends State<AuthPage> {
         signOutFacebook();
         break;
     }
-
     logout();
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget logoutText = Text("Logout");
-    Widget loginText = Text("Login");
+    Widget logoutText = Text("Logging out");
+    Widget loginText = Text("Logging in");
 
     Widget loginBtnGoogle = RaisedButton(
       child: Text("Sign in with Google"),
       color: Color(0xFFDD4B39),
       textColor: Colors.white,
       onPressed: signInWithGoogle,
-    );
-
-    Widget loginBtnTwitter = RaisedButton(
-      child: Text("Sign in with Twitter"),
-      color: Color(0xFF1DA1F2),
-      textColor: Colors.white,
-      onPressed: signInWithTwitter,
     );
 
     Widget loginBtnFb = RaisedButton(
@@ -199,12 +192,20 @@ class _AuthPageState extends State<AuthPage> {
       onPressed: signInWithFacebook,
     );
 
+    Widget loginBtnTwitter = RaisedButton(
+      child: Text("Sign in with Twitter"),
+      color: Color(0xFF1DA1F2),
+      textColor: Colors.white,
+      onPressed: signInWithTwitter,
+    );
+
     Widget logoutBtn = RaisedButton(
       child: Text("Sign out"),
       color: Colors.black38,
       textColor: Colors.white,
       onPressed: () => signOut(enumAuth),
     );
+
     Widget loginBtns = Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
@@ -225,6 +226,7 @@ class _AuthPageState extends State<AuthPage> {
           children: <Widget>[
             loggedIn ? loginText : logoutText,
             loggedIn ? logoutBtn : loginBtns,
+            //loggedIn ? MainAppStartPage() : LoginPage(),
           ],
         ),
       ),
