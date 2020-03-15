@@ -43,8 +43,8 @@ class _AuthPageState extends State<AuthPage> {
   final FacebookLogin _facebookSignIn = FacebookLogin();
   final TwitterLogin _twitterLogin = TwitterLogin(
     // このままではセキュリティ上大問題なのでcrypto使用版に書き換える
-    consumerKey: "xxxxxxxxxx",
-    consumerSecret: "xxxxxxxxxx",
+    consumerKey: "E78pLyZpDIt8MIVhfGtSWYu6s",
+    consumerSecret: "4qei7dUd3X8ghHOwgU9bzdPECIfZfVjAEwfMPAy9ZrsAqADbdq",
   );
 
   bool loggedIn = false;
